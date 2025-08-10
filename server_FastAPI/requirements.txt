@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+motor
+python-dotenv
+pymongo
+bcrypt
+python-jose[cryptography]
+cloudinary
+python-multipart
+pydantic-settings
