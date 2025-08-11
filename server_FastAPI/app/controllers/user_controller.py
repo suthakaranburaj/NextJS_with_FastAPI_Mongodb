@@ -5,7 +5,7 @@ from datetime import datetime
 import bcrypt
 
 from app.schemas.user import UserCreate, UserResponse, UserLogin
-from app.utils.api_response import ApiResponse
+from app.utils.api_response import send_response
 from app.utils.security import create_access_token, create_refresh_token
 from app.helper.common import validate_phone
 from app.utils.cloudinary import upload_to_cloudinary
@@ -28,11 +28,11 @@ async def register_user_controller(
     image: UploadFile = File(None)
 ):
     if not validate_phone(user.phone):
-        return ApiResponse.error("Invalid phone number", 400)
+        return send_response.error("Invalid phone number", 400)
 
     existing_user = await get_user_by_phone(db, user.phone)
     if existing_user:
-        return ApiResponse.error("User already exists", 400)
+        return send_response.error("User already exists", 400)
 
     hashed_pin = bcrypt.hashpw(user.pin.encode(), bcrypt.gensalt())
 
@@ -72,20 +72,20 @@ async def register_user_controller(
         refresh_token=refresh_token
     ).dict()
 
-    return ApiResponse.success(data=response_data, message="User registered successfully")
+    return send_response.success(data=response_data, message="User registered successfully")
 
 
 # Controller: Login User
 async def login_user_controller(credentials: UserLogin, db: AsyncIOMotorDatabase):
     if not validate_phone(credentials.phone):
-        return ApiResponse.error("Invalid phone number", 400)
+        return send_response.error("Invalid phone number", 400)
 
     user = await get_user_by_phone(db, credentials.phone)
     if not user:
-        return ApiResponse.error("User not found", 404)
+        return send_response.error("User not found", 404)
 
     if not bcrypt.checkpw(credentials.pin.encode(), user["pin"].encode()):
-        return ApiResponse.error("Invalid credentials", 401)
+        return send_response.error("Invalid credentials", 401)
 
     access_token = create_access_token(str(user["_id"]), user["role"])
     refresh_token = create_refresh_token(
@@ -105,4 +105,4 @@ async def login_user_controller(credentials: UserLogin, db: AsyncIOMotorDatabase
         refresh_token=refresh_token
     ).dict()
 
-    return ApiResponse.success(data=response_data, message="Login successful")
+    return send_response.success(data=response_data, message="Login successful")

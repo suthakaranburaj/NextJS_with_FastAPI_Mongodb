@@ -3,16 +3,16 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.schemas.user import UserCreate, UserLogin, UserResponse
-from app.utils.api_response import ApiResponse
+from app.utils.api_response import send_response
 from app.db import get_db
-from app.controllers.user.controller import (
+from app.controllers.user_controller import (
     register_user_controller,
     login_user_controller
 )
 
 router = APIRouter()
 
-@router.post("/register", response_model=ApiResponse[UserResponse])
+@router.post("/register")
 async def register_user_route(
     user: UserCreate,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -20,7 +20,7 @@ async def register_user_route(
 ):
     return await register_user_controller(user, db, image)
 
-@router.post("/login", response_model=ApiResponse[UserResponse])
+@router.post("/login")
 async def login_user_route(
     credentials: UserLogin,
     db: AsyncIOMotorDatabase = Depends(get_db)
