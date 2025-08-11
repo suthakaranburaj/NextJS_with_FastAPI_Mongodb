@@ -1,15 +1,17 @@
-# app/controllers/user.controller.py
-from fastapi import UploadFile, File, Depends
-from motor.motor_asyncio import AsyncIOMotorDatabase
+import os
+from pathlib import Path
 from datetime import datetime
 import bcrypt
-
-from app.schemas.user import UserCreate, UserResponse, UserLogin
-from app.utils.api_response import send_response
-from app.utils.security import create_access_token, create_refresh_token
-from app.helper.common import validate_phone
+from fastapi import UploadFile, File
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.utils.cloudinary import upload_to_cloudinary
+from app.utils.api_response import send_response
+from app.helper.common import validate_phone
+from app.schemas.user import UserCreate, UserResponse, UserLogin
 from app.db import get_db
+
+TEMP_DIR = Path("./public/temp")
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # DB helper functions
@@ -22,17 +24,18 @@ async def create_user(db: AsyncIOMotorDatabase, user_data: dict) -> dict:
 
 
 # Controller: Register User
+# Controller: Register User
 async def register_user_controller(
     user: UserCreate,
     db: AsyncIOMotorDatabase,
     image: UploadFile = File(None)
 ):
     if not validate_phone(user.phone):
-        return send_response.error("Invalid phone number", 400)
+        return send_response(False, None, "Invalid phone number", 400)
 
     existing_user = await get_user_by_phone(db, user.phone)
     if existing_user:
-        return send_response.error("User already exists", 400)
+        return send_response(False, None, "User already exists", 400)
 
     hashed_pin = bcrypt.hashpw(user.pin.encode(), bcrypt.gensalt())
 
@@ -72,20 +75,20 @@ async def register_user_controller(
         refresh_token=refresh_token
     ).dict()
 
-    return send_response.success(data=response_data, message="User registered successfully")
+    return send_response(True, response_data, "User registered successfully", 201)
 
 
 # Controller: Login User
 async def login_user_controller(credentials: UserLogin, db: AsyncIOMotorDatabase):
     if not validate_phone(credentials.phone):
-        return send_response.error("Invalid phone number", 400)
+        return send_response(False, None, "Invalid phone number", 400)
 
     user = await get_user_by_phone(db, credentials.phone)
     if not user:
-        return send_response.error("User not found", 404)
+        return send_response(False, None, "User not found", 404)
 
     if not bcrypt.checkpw(credentials.pin.encode(), user["pin"].encode()):
-        return send_response.error("Invalid credentials", 401)
+        return send_response(False, None, "Invalid credentials", 401)
 
     access_token = create_access_token(str(user["_id"]), user["role"])
     refresh_token = create_refresh_token(
@@ -105,4 +108,4 @@ async def login_user_controller(credentials: UserLogin, db: AsyncIOMotorDatabase
         refresh_token=refresh_token
     ).dict()
 
-    return send_response.success(data=response_data, message="Login successful")
+    return send_response(True, response_data, "Login successful", 200)

@@ -12,6 +12,7 @@ cloudinary.config(
 )
 
 async def upload_to_cloudinary(local_file_path: str):
+    # print(os.getenv("CLOUDINARY_CLOUD_NAME"))
     """Uploads a file to Cloudinary and deletes it locally."""
     try:
         if not local_file_path:
