@@ -1,3 +1,4 @@
 install venv
 install the requirements.txt file
 to run type uvicorn app.main:app --reload --port 8000
+or run "docker-compose up --build" in root dir

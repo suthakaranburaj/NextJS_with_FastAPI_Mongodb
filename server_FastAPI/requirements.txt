@@ -8,3 +8,4 @@ python-jose[cryptography]
 cloudinary
 python-multipart
 pydantic-settings
+jwt
