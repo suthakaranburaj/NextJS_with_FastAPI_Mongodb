@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Form
 from motor.motor_asyncio import AsyncIOMotorDatabase
-
+from app.middlewares.upload_middleware import upload_middleware
 from app.schemas.user import UserCreate, UserLogin
 from app.db import get_db
 from app.controllers.user_controller import (
@@ -20,13 +20,14 @@ async def register_user_route(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     # Create Pydantic model manually from form fields
+    local_image_path = await upload_middleware(image)
     user = UserCreate(
         name=name,
         phone=phone,
         pin=pin,
         role=role
     )
-    return await register_user_controller(user, db, image)
+    return await register_user_controller(user, db, local_image_path)
 
 
 @router.post("/login")

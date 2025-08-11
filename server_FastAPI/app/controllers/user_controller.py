@@ -9,7 +9,9 @@ from app.utils.api_response import send_response
 from app.helper.common import validate_phone
 from app.schemas.user import UserCreate, UserResponse, UserLogin
 from app.db import get_db
-
+from app.utils.security import create_access_token, create_refresh_token
+from bson import ObjectId
+from fastapi.encoders import jsonable_encoder
 TEMP_DIR = Path("./public/temp")
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -28,7 +30,7 @@ async def create_user(db: AsyncIOMotorDatabase, user_data: dict) -> dict:
 async def register_user_controller(
     user: UserCreate,
     db: AsyncIOMotorDatabase,
-    image: UploadFile = File(None)
+    local_file_path: str = None
 ):
     if not validate_phone(user.phone):
         return send_response(False, None, "Invalid phone number", 400)
@@ -40,10 +42,8 @@ async def register_user_controller(
     hashed_pin = bcrypt.hashpw(user.pin.encode(), bcrypt.gensalt())
 
     image_url = ""
-    if image:
-        image_bytes = await image.read()
-        if image_bytes:
-            image_url = await upload_to_cloudinary(image_bytes)
+    if local_file_path:
+        image_url = await upload_to_cloudinary(local_file_path)
 
     user_data = {
         **user.dict(exclude={"pin"}),
@@ -68,12 +68,12 @@ async def register_user_controller(
         {"_id": new_user["_id"]},
         {"$set": {"refresh_token": refresh_token}}
     )
-
-    response_data = UserResponse(
+    new_user["_id"] = str(new_user["_id"])
+    response_data = jsonable_encoder({
         **new_user,
-        access_token=access_token,
-        refresh_token=refresh_token
-    ).dict()
+        "access_token": access_token,
+        "refresh_token": refresh_token
+    })
 
     return send_response(True, response_data, "User registered successfully", 201)
 

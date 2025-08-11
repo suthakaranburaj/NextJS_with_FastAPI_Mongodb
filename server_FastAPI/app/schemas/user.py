@@ -11,13 +11,8 @@ class UserCreate(UserBase):
     pin: str = Field(..., min_length=4)
 
 class UserResponse(UserBase):
-    id: str = Field(..., alias="_id")
-    image: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    any
 
-    class Config:
-        allow_population_by_field_name = True
 
 class UserLogin(BaseModel):
     phone: str
